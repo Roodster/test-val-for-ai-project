@@ -1,158 +1,152 @@
-from aif360.metrics import ClassificationMetric
+import aif360.sklearn as skm
 
-# Define individual getter functions for each generalized metric
-def get_num_samples(metric):
-    return metric.num_samples()
-
-def get_num_pos_neg(metric):
-    return metric.num_pos_neg()
-
-def get_specificity_score(metric):
-    return metric.specificity_score()
-
-def get_sensitivity_score(metric):
-    return metric.sensitivity_score()
-
-def get_base_rate(metric):
-    return metric.base_rate()
-
-def get_selection_rate(metric):
-    return metric.selection_rate()
-
-def get_smoothed_base_rate(metric):
-    return metric.smoothed_base_rate()
-
-def get_smoothed_selection_rate(metric):
-    return metric.smoothed_selection_rate()
-
-def get_generalized_fpr(metric):
-    return metric.generalized_fpr()
-
-def get_generalized_fnr(metric):
-    return metric.generalized_fnr()
-
-# Define individual getter functions for each fairness metric
-def get_statistical_parity_difference(metric):
-    return metric.statistical_parity_difference()
-
-def get_mean_difference(metric):
-    return metric.mean_difference()
-
-def get_disparate_impact_ratio(metric):
-    return metric.disparate_impact()
-
-def get_equal_opportunity_ratio(metric):
-    return metric.equal_opportunity_difference()
-
-def get_average_odds_difference(metric):
-    return metric.average_odds_difference()
-
-def get_average_odds_error(metric):
-    return metric.average_odds_error()
-
-def get_class_imbalance(metric):
-    return metric.disparate_impact()
-
-def get_kl_divergence(metric):
-    return metric.kl_divergence()
-
-def get_conditional_demographic_disparity(metric):
-    return metric.conditional_demographic_disparity()
-
-def get_smoothed_edf(metric):
-    return metric.smoothed_empirical_differential_fairness()
-
-def get_df_bias_amplification(metric):
-    return metric.disparate_mistreatment()
-
-def get_between_group_generalized_entropy_error(metric):
-    return metric.between_group_generalized_entropy_error()
-
-def get_mdss_bias_score(metric):
-    return metric.mean_difference()
-
-# Define individual getter functions for each individual fairness metric
-def get_generalized_entropy_index(metric):
-    return metric.generalized_entropy_index()
-
-def get_generalized_entropy_error(metric):
-    return metric.generalized_entropy_error()
-
-def get_theil_index(metric):
-    return metric.theil_index()
-
-def get_coefficient_of_variation(metric):
-    return metric.coefficient_of_variation()
-
-def get_consistency_score(metric):
-    return metric.consistency_score()
-
-
-
-# Define a function to calculate various fairness metrics using a ClassificationMetric object
-def get_fairness_metrics(metric):
+class Wrapper:
     
-    # Store each fairness metric in a dictionary with the metric name as the key
-    fairness_metrics = {
-        "statistical_parity_difference": get_statistical_parity_difference(metric),
-        "mean_difference": get_mean_difference(metric),
-        "disparate_impact_ratio": get_disparate_impact_ratio(metric),
-        "equal_opportunity_ratio": get_equal_opportunity_ratio(metric),
-        "average_odds_difference": get_average_odds_difference(metric),
-        "average_odds_error": get_average_odds_error(metric),
-        "class_imbalance": get_class_imbalance(metric),
-        "kl_divergence": get_kl_divergence(metric),
-        "conditional_demographic_disparity": get_conditional_demographic_disparity(metric),
-        "smoothed_edf": get_smoothed_edf(metric),
-        "df_bias_amplification": get_df_bias_amplification(metric),
-        "between_group_generalized_entropy_error": get_between_group_generalized_entropy_error(metric),
-        "mdss_bias_score": get_mdss_bias_score(metric)
-    }
+   def get_metrics(self):
+        metrics = {}
+        for attr in dir(self):
+            if isinstance(getattr(self.__class__, attr, None), property):
+                metrics[attr] = getattr(self, attr)
+        return metrics
 
-    return fairness_metrics
+class GenericMetricsWrapper(Wrapper):
+    def __init__(self, y_true, y_pred, probas_pred):
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.probas_pred = probas_pred
 
-# Define a function to calculate various individual fairness metrics using a ClassificationMetric object
-def get_individual_fairness_metrics(metric):
-    
-    # Store each individual fairness metric in a dictionary with the metric name as the key
-    individual_fairness_metrics = {
-        "generalized_entropy_index": get_generalized_entropy_index(metric),
-        "generalized_entropy_error": get_generalized_entropy_error(metric),
-        "theil_index": get_theil_index(metric),
-        "coefficient_of_variation": get_coefficient_of_variation(metric),
-        "consistency_score": get_consistency_score(metric)
-    }
+    @property
+    def num_samples(self):
+        return skm.metrics.num_samples(self.y_true, self.y_pred)
 
-    return individual_fairness_metrics
+    @property
+    def num_pos_neg(self):
+        return skm.metrics.num_pos_neg(self.y_true, self.y_pred)
+
+    @property
+    def specificity_score(self):
+        return skm.metrics.specificity_score(self.y_true, self.y_pred)
+
+    @property
+    def sensitivity_score(self):
+        return skm.metrics.sensitivity_score(self.y_true, self.y_pred)
+
+    @property
+    def base_rate(self):
+        return skm.metrics.base_rate(self.y_true, self.y_pred)
+
+    @property
+    def selection_rate(self):
+        return skm.metrics.selection_rate(self.y_true, self.y_pred)
+
+    @property
+    def smoothed_base_rate(self):
+        return skm.metrics.smoothed_base_rate(self.y_true, self.y_pred)
+
+    @property
+    def smoothed_selection_rate(self):
+        return skm.metrics.smoothed_selection_rate(self.y_true, self.y_pred)
+
+    @property
+    def generalized_fpr(self):
+        return skm.metrics.generalized_fpr(self.y_true, self.probas_pred)
+
+    @property
+    def generalized_fnr(self):
+        return skm.metrics.generalized_fnr(self.y_true, self.probas_pred)
+class GroupMetricsWrapper:
+    def __init__(self, y_true, y_pred, probas_pred, protected_attributes, dataset):
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.probas_pred = probas_pred
+        self.prot_attr = protected_attributes
+        self.X = dataset
+
+    @property
+    def statistical_parity_difference(self):
+        return skm.metrics.statistical_parity_difference(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def mean_difference(self):
+        return skm.metrics.mean_difference(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def disparate_impact_ratio(self):
+        return skm.metrics.disparate_impact_ratio(self.y_true)
+
+    @property
+    def equal_opportunity_difference(self):
+        return skm.metrics.equal_opportunity_difference(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def average_odds_difference(self):
+        return skm.metrics.average_odds_difference(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def average_odds_error(self):
+        return skm.metrics.average_odds_error(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def class_imbalance(self):
+        return skm.metrics.class_imbalance(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def kl_divergence(self):
+        return skm.metrics.kl_divergence(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def conditional_demographic_disparity(self):
+        return skm.metrics.conditional_demographic_disparity(self.y_true)
+
+    @property
+    def smoothed_edf(self):
+        return skm.metrics.smoothed_edf(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def df_bias_amplification(self):
+        return skm.metrics.df_bias_amplification(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def between_group_generalized_entropy_error(self):
+        return skm.metrics.between_group_generalized_entropy_error(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
+
+    @property
+    def mdss_bias_score(self):
+        return skm.metrics.mdss_bias_score(self.y_true, self.probas_pred, self.X)
+class IndividualMetricsWrapper(Wrapper):
+    def __init__(self, y_true, y_pred, probas_pred, X, y, alpha=2, n_neighbors=5):
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.probas_pred = probas_pred
+        self.b = X.to_numpy()
+        self.X = X
+        self.y = y
+        self.alpha = alpha
+        self.n_neighbors = n_neighbors
+
+    # @property
+    # def generalized_entropy_index(self):
+    #     return skm.metrics.generalized_entropy_index(self.b, self.alpha)
+
+    @property
+    def generalized_entropy_error(self):
+        return skm.metrics.generalized_entropy_error(self.y_true, self.y_pred)
+
+    # @property
+    # def theil_index(self):
+    #     return skm.metrics.theil_index(self.b)
+
+    # @property
+    # def coefficient_of_variation(self):
+    #     return skm.metrics.coefficient_of_variation(self.b)
+
+    # @property
+    # def consistency_score(self):
+    #     return skm.metrics.consistency_score(self.X, self.y, self.n_neighbors)
 
 
-# Define a function to calculate various generalized metrics using a ClassificationMetric object
-def get_generalized_metrics(metric):
-    
-    # Store each generalized metric in a dictionary with the metric name as the key
-    generalized_metrics = {
-        "num_samples": get_num_samples(metric),
-        "num_pos_neg": get_num_pos_neg(metric),
-        "specificity_score": get_specificity_score(metric),
-        "sensitivity_score": get_sensitivity_score(metric),
-        "base_rate": get_base_rate(metric),
-        "selection_rate": get_selection_rate(metric),
-        "smoothed_base_rate": get_smoothed_base_rate(metric),
-        "smoothed_selection_rate": get_smoothed_selection_rate(metric),
-        "generalized_fpr": get_generalized_fpr(metric),
-        "generalized_fnr": get_generalized_fnr(metric)
-    }
-
-    return generalized_metrics
 
 if __name__ == "__main__":
-
-# TO DO: FIX EXAMPLE 
-
-metric = ClassificationMetric(y_true, y_pred, privileged_groups=privileged_groups, unprivileged_groups)
-# Call the function with appropriate parameters
-fairness_metrics = get_fairness_metrics(metric)
-# Call the function with appropriate parameters
-individual_fairness_metrics = get_individual_fairness_metrics(metric)
-generalized_metrics = get_generalized_metrics(metric)
-
+    
+    # TODO: Fix example.
+    pass
