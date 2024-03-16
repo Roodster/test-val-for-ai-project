@@ -37,6 +37,7 @@ class InferenceEngine:
         else:
             input_name = self.model.get_inputs()[0].name
             return self.model.run(None, {input_name: X_test.values.astype(np.float32)})[0]
+   
 
     def save_onnx_model(self, file_path="./../model/baseline_model.onnx"):
         if isinstance(self.model, Pipeline):
