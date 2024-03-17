@@ -67,8 +67,9 @@ if __name__ == "__main__":
     import pandas as pd
     from sklearn.metrics import classification_report, confusion_matrix
 
-    good_model = GradientBoostingClassifier()
-    good_model_fair = GradientBoostingClassifier()
+    good_model = GradientBoostingClassifier(n_estimators=325, min_samples_split=842, min_samples_leaf=120, max_depth=5, learning_rate=0.14)
+    good_model_fair = GradientBoostingClassifier(n_estimators=325, min_samples_split=842, min_samples_leaf=120, max_depth=5, learning_rate=0.14)
+    X_train_fair = X_train.drop(protected_attributes, axis=1)
     
     X_train_fair = X_train.drop(protected_attributes, axis=1)
     X_test_fair = X_test.drop(protected_attributes, axis=1)
