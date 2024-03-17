@@ -3,8 +3,10 @@ from sklearn.pipeline import Pipeline
 import numpy as np
 import pandas as pd
 
-
-N_FEATURES = 315
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.pipeline import Pipeline
+import numpy as np
+import pandas as pd
 
 # onnx imports
 import onnxruntime as rt
@@ -12,6 +14,12 @@ import onnx
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import to_onnx
 from skl2onnx import convert_sklearn
+
+
+from preprocessing import preprocess
+
+N_FEATURES_BASELINE_MODEL = 315
+
 
 class InferenceEngine:
     def __init__(self, model_type='GB', onnx_model_path=None, pipeline=None):
@@ -43,7 +51,7 @@ class InferenceEngine:
         if isinstance(self.model, Pipeline):
             # Let's convert the model to ONNX
             onnx_model = convert_sklearn(self.model, 
-                                         initial_types=[('X', FloatTensorType((None, N_FEATURES)))],
+                                         initial_types=[('X', FloatTensorType((None, N_FEATURES_BASELINE_MODEL)))],
                                          target_opset=12)
             onnx.save(onnx_model, file_path)
 
@@ -61,17 +69,10 @@ if __name__ == "__main__":
 
 
     ds_train = pd.read_csv('./../data/train.csv')
-    ds_test = pd.read_csv('./../data/test.csv')
-    
-    # Let's specify the features and the target
-    y_train = ds_train["checked"]
-    X_train = ds_train.drop(['checked'], axis=1)
-    X_train = X_train.astype(np.float32)
+    ds_test = pd.read_csv('./../data/test.csv')    
 
-    # Let's specify the features and the target
-    y_test = ds_test["checked"]
-    X_test = ds_test.drop(['checked'], axis=1)
-    X_test = X_test.astype(np.float32)
+    X_train, y_train = preprocess(ds_train)
+    X_test, y_test = preprocess(ds_test)
     
     # Example usage
     # Instantiate the ModelClass with GradientBoostingClassifier
@@ -79,8 +80,14 @@ if __name__ == "__main__":
     engine.fit(X_train, y_train)
     y_pred_gb = engine.predict(X_test)
 
-    engine.save_onnx_model(file_path="./../model/baseline_model_test.onnx")
+    engine.save_onnx_model(file_path="./../model/baseline_model.onnx")
 
     # Instantiate the ModelClass with ONNX model
-    engine = InferenceEngine(model_type='ONNX', onnx_model_path="./../model/baseline_model_test.onnx")
-    y_pred_onnx = engine.predict(X_test)
+    engine = InferenceEngine(model_type='ONNX', onnx_model_path="./../model/baseline_model.onnx")
+    
+    y_pred_baseline = engine.predict(X_test)
+    
+    from evaluation import EvaluationEngine
+    evaluator = EvaluationEngine()
+    
+    evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred_baseline)

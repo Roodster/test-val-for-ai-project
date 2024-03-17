@@ -5,6 +5,8 @@ import aif360.sklearn.metrics as skm
 from sklearn.metrics import confusion_matrix, recall_score, precision_score, accuracy_score, classification_report
 
 
+from preprocessing import preprocess
+
 # Settings
 np.random.seed(42)
 import warnings
@@ -15,7 +17,10 @@ class Wrapper:
    def get_metrics(self):
         metrics = {}
         for attr in dir(self):
+                
             if isinstance(getattr(self.__class__, attr, None), property):
+                if attr != 'confusion_matrix':
+                    continue
                 metrics[attr] = getattr(self, attr)
         return metrics
 
@@ -373,7 +378,8 @@ class GenericMetricsWrapper(Wrapper):
 
     @property
     def confusion_matrix(self):
-        conf_matrix = confusion_matrix(self.y_true, self.y_pred)
+        tn, fp, fn, tp = confusion_matrix(self.y_true, self.y_pred).ravel()
+        conf_matrix = f"TN: {tn}, FP: {fp}, FN: {fn}, TP {tp}"
         return conf_matrix
 
 
@@ -479,20 +485,52 @@ class IndividualMetricsWrapper(Wrapper):
     def get_metrics(self):
         return super().get_metrics()
 
+class EvaluationEngine():
+    
+    
+    def __init__(self):
+        pass
+    
+    def evaluate_generic(self, y_true, y_pred):
+        generic_metrics = GenericMetricsWrapper(y_true=y_true, y_pred=y_pred)
+
+        results = generic_metrics.get_metrics()
+        
+        self._print_results(results=results, metrics_type="Generic ")
+    
+    def evaluate_group(self,  y_true, y_pred, protected_attributes, X):
+        group_metrics = GroupMetricsWrapper(y_true=y_true, y_pred=y_pred, protected_attributes=protected_attributes, dataset=X)
+
+        results = group_metrics.get_metrics()
+        self._print_results(results=results,  metrics_type="Group ")
+
+    def evaluate_individual(self, y_true, y_pred, X):
+        
+        indiv_metrics = IndividualMetricsWrapper(y_true=y_true, y_pred=y_pred, X=X, y=y_test, alpha=None, n_neighbors=None)
+
+        results = indiv_metrics.get_metrics()
+        self._print_results(results=results,  metrics_type="Individual ")
+    
+    def _print_results(self, results, metrics_type):
+        print(f'{metrics_type}Metrics')
+
+        # Print the results
+        for metric, value in results.items():
+            print(f"{metric:<30} {value}")
+        
+        
+            
+        
+    
+
+
 if __name__ == "__main__":
     
     ds_train = pd.read_csv('./../data/train.csv')
     ds_test = pd.read_csv('./../data/test.csv')
     
-    # Let's specify the features and the target
-    y_train = ds_train["checked"]
-    X_train = ds_train.drop(['checked'], axis=1)
-    X_train = X_train.astype(np.float32)
-
-    # Let's specify the features and the target
-    y_test = ds_test["checked"]
-    X_test = ds_test.drop(['checked'], axis=1)
-    X_test = X_test.astype(np.float32)
+    X_train, y_train = preprocess(ds_train)
+    X_test, y_test = preprocess(ds_test)
     
     # Example usage
     # Instantiate the ModelClass with GradientBoostingClassifier
@@ -502,33 +540,16 @@ if __name__ == "__main__":
     y_pred = engine.predict(X_test)
 
     protected_attributes = X_test['persoon_geslacht_vrouw']
-    generic_metrics = GenericMetricsWrapper(y_true=y_test, y_pred=y_pred)
+    
+    evaluator = EvaluationEngine()
 
     print('generic metrics: ')
-
-    results = generic_metrics.get_metrics()
-
-    for metric, value in results.items():
-        print(f"""{metric:<30} {value}""")
-
-    group_metrics = GroupMetricsWrapper(y_true=y_test, y_pred=y_pred, protected_attributes=protected_attributes, dataset=X_test)
-
-    results = group_metrics.get_metrics()
-
+    evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred)
     print('group  metrics:')
-    # Print the results
-    for metric, value in results.items():
-        print(f"""{metric:<30} {value}""")
-
-    indiv_metrics = IndividualMetricsWrapper(y_true=y_test, y_pred=y_pred, X=X_test, y=y_test, alpha=None, n_neighbors=None)
-
-    results = indiv_metrics.get_metrics()
+    evaluator.evaluate_group(y_true=y_test, y_pred=y_pred, X=X_test)
     print('individual metrics: ')
+    evaluator.evaluate_individual(y_true=y_test, y_pred=y_pred, X=X_test)
 
-    # Print the results
-    for metric, value in results.items():
-        print(f"{metric:<30} {value}")
-        
         
     """ TODO: fix metricwrapper example   
     # Metric for the original dataset
