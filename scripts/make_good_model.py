@@ -53,6 +53,7 @@ if __name__ == "__main__":
         
     ds_train = pd.read_csv('./../data/train.csv')
     ds_test = pd.read_csv('./../data/test.csv')
+    instance_weights = pd.read_csv('./../data/instance_weights.csv')['instance_weights']
 
     X_train, y_train = preprocess(ds_train)
     X_test, y_test = preprocess(ds_test)
@@ -62,11 +63,20 @@ if __name__ == "__main__":
     # X_cr_alpha = cr_alpha.fit_transform(X_train)
     
 
-    model = InferenceEngine(model_type='GB')
-    # model.fit(X_cr_alpha, y_train)
-    X_test_fair = X_test.drop(protected_attributes, axis=1)
-    y_pred_fair = model.predict(X_test_fair)    
+    from sklearn.ensemble import GradientBoostingClassifier
+    import pandas as pd
+    from sklearn.metrics import classification_report, confusion_matrix
 
+    good_model = GradientBoostingClassifier()
+    good_model_fair = GradientBoostingClassifier()
+    
+    X_train_fair = X_train.drop(protected_attributes, axis=1)
+    X_test_fair = X_test.drop(protected_attributes, axis=1)
+        
+    good_model.fit(X_train, y_train, sample_weight=instance_weights.to_numpy())
+    good_model_fair.fit(X_train_fair, y_train, sample_weight=instance_weights.to_numpy())
+    y_pred_rew = good_model.predict(X_test)
+    y_pred_fair = good_model_fair.predict(X_test_fair)
 
     baseline_model = InferenceEngine(model_type='ONNX', onnx_model_path='./../model/baseline_model.onnx')
     y_pred_baseline = baseline_model.predict(X_test)
@@ -83,7 +93,14 @@ if __name__ == "__main__":
     
     evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred_baseline)
 
-    print("Evaluation of \'good\' model ")
+    print("Evaluation of \'good\' model with protected features ")
+    
+    evaluator = EvaluationEngine()
+     
+    evaluator.evaluate_generic(y_test, y_pred_rew)
+    # evaluator.evaluate_group(y_test, y_pred, X_test)
+ 
+    print("Evaluation of \'good\' model without protected features ")
     
     evaluator = EvaluationEngine()
      
