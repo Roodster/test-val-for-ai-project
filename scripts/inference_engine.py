@@ -90,4 +90,4 @@ if __name__ == "__main__":
     from evaluation import EvaluationEngine
     evaluator = EvaluationEngine()
     
-    evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred_baseline)
+    evaluator.evaluate_generic_metrics(y_true=y_test, y_pred=y_pred_baseline)

@@ -7,6 +7,7 @@ from sklearn.metrics import confusion_matrix, recall_score, precision_score, acc
 
 
 from preprocessing import preprocess
+from constants import protected_attributes
 
 # Settings
 np.random.seed(42)
@@ -20,8 +21,8 @@ class Wrapper:
         for attr in dir(self):
                 
             if isinstance(getattr(self.__class__, attr, None), property):
-                if attr != 'confusion_matrix':
-                    continue
+                # if attr != 'confusion_matrix':
+                    # continue
                 metrics[attr] = getattr(self, attr)
         return metrics
 
@@ -495,7 +496,7 @@ class StatisticalEvaluation:
         pass
     
     
-    def plot_classification_by_feature(X_test, y_test, y_pred, feature_name, feature_map=None):
+    def plot_classification_by_feature(self, X_test, y_test, y_pred, feature_name, feature_map=None):
         """
         Plots true negatives, true positives, false negatives, and false positives grouped by a feature.
 
@@ -625,7 +626,7 @@ if __name__ == "__main__":
     
     # Example usage
     # Instantiate the ModelClass with GradientBoostingClassifier
-    from model import InferenceEngine
+    from inference_engine import InferenceEngine
     # Instantiate the ModelClass with ONNX model
     engine = InferenceEngine(model_type='ONNX', onnx_model_path="./../model/good_model.onnx")
     y_pred = engine.predict(X_test)
@@ -637,9 +638,27 @@ if __name__ == "__main__":
     print('generic metrics: ')
     evaluator.evaluate_generic_metrics(y_true=y_test, y_pred=y_pred)
     print('group  metrics:')
-    evaluator.evaluate_group_metrics(y_true=y_test, y_pred=y_pred, X=X_test)
+    evaluator.evaluate_group_metrics(y_true=y_test, y_pred=y_pred, protected_attributes=protected_attributes, X=X_test)
     print('individual metrics: ')
     evaluator.evaluate_individual_metrics(y_true=y_test, y_pred=y_pred, X=X_test)
+    
+    print('plot')
+    feature_name1= 'persoon_geslacht_vrouw'
+    feature_name2 = 'persoon_leeftijd_bij_onderzoek'
+    # Define a function to conditionally change age values
+    def change_age_category(age):
+        if age < 30:
+            return 0
+        else:
+            return 1
+
+    X_test_age = X_test.copy()
+    # Apply the function to the 'age' column using vectorized operations
+    X_test_age[feature_name2] = X_test[feature_name2].apply(change_age_category)
+
+    stats_evaluator = StatisticalEvaluation()
+    stats_evaluator.plot_classification_by_feature(X_test, y_test, y_pred, feature_name1, feature_map={0: 'Male', 1: 'Female'})
+    stats_evaluator.plot_classification_by_feature(X_test_age, y_test, y_pred, feature_name2, feature_map={0: 'Young', 1: 'Old'})
 
         
     """ TODO: fix metricwrapper example   

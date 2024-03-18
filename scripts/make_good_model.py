@@ -67,8 +67,8 @@ if __name__ == "__main__":
     import pandas as pd
     from sklearn.metrics import classification_report, confusion_matrix
 
-    good_model = GradientBoostingClassifier(n_estimators=400, min_samples_split=950, min_samples_leaf=125, max_depth=5, learning_rate=0.15)
-    good_model_fair = GradientBoostingClassifier(n_estimators=400, min_samples_split=950, min_samples_leaf=125, max_depth=5, learning_rate=0.15)
+    good_model = GradientBoostingClassifier(n_estimators=300, min_samples_split=800, min_samples_leaf=125, max_depth=5, learning_rate=0.155)
+    good_model_fair = GradientBoostingClassifier(n_estimators=300, min_samples_split=800, min_samples_leaf=125, max_depth=5, learning_rate=0.155)
     X_train_fair = X_train.drop(protected_attributes, axis=1)
     
     X_train_fair = X_train.drop(protected_attributes, axis=1)
@@ -78,6 +78,13 @@ if __name__ == "__main__":
     good_model_fair.fit(X_train_fair, y_train, sample_weight=instance_weights.to_numpy())
     y_pred_rew = good_model.predict(X_test)
     y_pred_fair = good_model_fair.predict(X_test_fair)
+
+    engine = InferenceEngine('GB')
+    engine.fit(X_train, y_train)
+    engine.save_onnx_model("./../good_model.onnx")
+    
+    
+    
 
     baseline_model = InferenceEngine(model_type='ONNX', onnx_model_path='./../model/baseline_model.onnx')
     y_pred_baseline = baseline_model.predict(X_test)
@@ -92,7 +99,7 @@ if __name__ == "__main__":
     
     evaluator = EvaluationEngine()
     
-    evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred_baseline)
+    evaluator.evaluate_generic_metrics(y_true=y_test, y_pred=y_pred_baseline)
 
     print("Evaluation of \'good\' model with protected features ")
     
