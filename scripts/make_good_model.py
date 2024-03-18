@@ -67,8 +67,8 @@ if __name__ == "__main__":
     import pandas as pd
     from sklearn.metrics import classification_report, confusion_matrix
 
-    good_model = GradientBoostingClassifier(n_estimators=325, min_samples_split=842, min_samples_leaf=120, max_depth=5, learning_rate=0.14)
-    good_model_fair = GradientBoostingClassifier(n_estimators=325, min_samples_split=842, min_samples_leaf=120, max_depth=5, learning_rate=0.14)
+    good_model = GradientBoostingClassifier(n_estimators=400, min_samples_split=950, min_samples_leaf=125, max_depth=5, learning_rate=0.15)
+    good_model_fair = GradientBoostingClassifier(n_estimators=400, min_samples_split=950, min_samples_leaf=125, max_depth=5, learning_rate=0.15)
     X_train_fair = X_train.drop(protected_attributes, axis=1)
     
     X_train_fair = X_train.drop(protected_attributes, axis=1)
@@ -98,13 +98,13 @@ if __name__ == "__main__":
     
     evaluator = EvaluationEngine()
      
-    evaluator.evaluate_generic(y_test, y_pred_rew)
+    evaluator.evaluate_generic_metrics(y_test, y_pred_rew)
     # evaluator.evaluate_group(y_test, y_pred, X_test)
  
     print("Evaluation of \'good\' model without protected features ")
     
     evaluator = EvaluationEngine()
      
-    evaluator.evaluate_generic(y_test, y_pred_fair)
+    evaluator.evaluate_generic_metrics(y_test, y_pred_fair)
     # evaluator.evaluate_group(y_test, y_pred, X_test)
  

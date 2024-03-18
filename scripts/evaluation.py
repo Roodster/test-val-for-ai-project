@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 import aif360.sklearn.metrics as skm
 from sklearn.metrics import confusion_matrix, recall_score, precision_score, accuracy_score, classification_report
@@ -485,31 +486,122 @@ class IndividualMetricsWrapper(Wrapper):
     def get_metrics(self):
         return super().get_metrics()
 
+
+
+class StatisticalEvaluation:
+    
+    
+    def __init__(self):
+        pass
+    
+    
+    def plot_classification_by_feature(X_test, y_test, y_pred, feature_name, feature_map=None):
+        """
+        Plots true negatives, true positives, false negatives, and false positives grouped by a feature.
+
+        Args:
+            model: Trained GradientBoostingClassifier model.
+            X_test: Pandas dataframe containing the test features.
+            y_test: Pandas Series containing the true labels for the test set.
+            feature_name: Name of the feature to group classifications by.
+        """
+
+        # Store counts for each classification type and feature value
+        class_counts = {'TP': {0: 0, 1: 0}, 'TN': {0: 0, 1: 0}, 'FP': {0: 0, 1: 0}, 'FN': {0: 0, 1: 0}}
+        for i, (y_true, y_pred, feature_value) in enumerate(zip(y_test, y_pred, X_test[feature_name])):
+            if y_true == 1 and y_pred == 1:
+                class_counts['TP'][feature_value] += 1
+            elif y_true == 1 and y_pred == 0:
+                class_counts['FN'][feature_value] += 1
+            elif y_true == 0 and y_pred == 1:
+                class_counts['FP'][feature_value] += 1
+            else:
+                class_counts['TN'][feature_value] += 1
+
+        # Extract data for plotting
+        unique_features = sorted(set(X_test[feature_name]))
+
+        # Create the figure with subplots
+        fig, axes = plt.subplots(2, 2, figsize=(10, 7))
+
+
+        features = []
+        if feature_map != None:
+            
+            for feature_value in unique_features:
+                features.append(feature_map[feature_value])
+        else:
+            features = unique_features
+        
+        
+        # Plot true positives
+        axes[0, 0].bar(features, [class_counts['TP'][v] for v in unique_features], label='True Positives')
+        axes[0, 0].set_xlabel(feature_name)
+        axes[0, 0].set_ylabel('Count')
+        axes[0, 0].set_title('True Positives')
+        axes[0, 0].set_xticks(unique_features)
+
+        # Plot true negatives
+        axes[0, 1].bar(features, [class_counts['TN'][v] for v in unique_features], label='True Negatives')
+        axes[0, 1].set_xlabel(feature_name)
+        axes[0, 1].set_ylabel('Count')
+        axes[0, 1].set_title('True Negatives')
+        axes[0, 1].set_xticks(unique_features)
+
+        # Plot false positives
+        axes[1, 0].bar(features, [class_counts['FP'][v] for v in unique_features], label='False Positives')
+        axes[1, 0].set_xlabel(feature_name)
+        axes[1, 0].set_ylabel('Count')
+        axes[1, 0].set_title('False Positives')
+        axes[1, 0].set_xticks(unique_features)
+
+        # Plot false negatives
+        axes[1, 1].bar(features, [class_counts['FN'][v] for v in unique_features], label='False Negatives')
+        axes[1, 1].set_xlabel(feature_name)
+        axes[1, 1].set_ylabel('Count')
+        axes[1, 1].set_title('False Negatives')
+        axes[1, 1].set_xticks(unique_features)
+
+        # Common x labels for all subplots
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.show()
+
+        
+    
+
 class EvaluationEngine():
     
     
     def __init__(self):
         pass
     
-    def evaluate_generic(self, y_true, y_pred):
+    def evaluate_generic_metrics(self, y_true, y_pred):
         generic_metrics = GenericMetricsWrapper(y_true=y_true, y_pred=y_pred)
 
         results = generic_metrics.get_metrics()
         
         self._print_results(results=results, metrics_type="Generic ")
     
-    def evaluate_group(self,  y_true, y_pred, protected_attributes, X):
+    def evaluate_group_metrics(self,  y_true, y_pred, protected_attributes, X):
         group_metrics = GroupMetricsWrapper(y_true=y_true, y_pred=y_pred, protected_attributes=protected_attributes, dataset=X)
 
         results = group_metrics.get_metrics()
         self._print_results(results=results,  metrics_type="Group ")
 
-    def evaluate_individual(self, y_true, y_pred, X):
+    def evaluate_individual_metrics(self, y_true, y_pred, X):
         
         indiv_metrics = IndividualMetricsWrapper(y_true=y_true, y_pred=y_pred, X=X, y=y_test, alpha=None, n_neighbors=None)
 
         results = indiv_metrics.get_metrics()
         self._print_results(results=results,  metrics_type="Individual ")
+    
+    def evaluate_confusion_matrix_via_feature(y_true, y_pred, feature_name, feature_map=None):
+        
+        stats = StatisticalEvaluation()
+        stats.plot_classification_by_feature(y_true=y_true, y_pred=y_pred, feature_name=feature_name, feature_map=feature_map)
+        
+    
     
     def _print_results(self, results, metrics_type):
         print(f'{metrics_type}Metrics')
@@ -517,7 +609,6 @@ class EvaluationEngine():
         # Print the results
         for metric, value in results.items():
             print(f"{metric:<30} {value}")
-        
         
             
         
@@ -544,11 +635,11 @@ if __name__ == "__main__":
     evaluator = EvaluationEngine()
 
     print('generic metrics: ')
-    evaluator.evaluate_generic(y_true=y_test, y_pred=y_pred)
+    evaluator.evaluate_generic_metrics(y_true=y_test, y_pred=y_pred)
     print('group  metrics:')
-    evaluator.evaluate_group(y_true=y_test, y_pred=y_pred, X=X_test)
+    evaluator.evaluate_group_metrics(y_true=y_test, y_pred=y_pred, X=X_test)
     print('individual metrics: ')
-    evaluator.evaluate_individual(y_true=y_test, y_pred=y_pred, X=X_test)
+    evaluator.evaluate_individual_metrics(y_true=y_test, y_pred=y_pred, X=X_test)
 
         
     """ TODO: fix metricwrapper example   
