@@ -3,16 +3,11 @@ from sklearn.pipeline import Pipeline
 import numpy as np
 import pandas as pd
 
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.pipeline import Pipeline
-import numpy as np
-import pandas as pd
 
 # onnx imports
 import onnxruntime as rt
 import onnx
 from skl2onnx.common.data_types import FloatTensorType
-from skl2onnx import to_onnx
 from skl2onnx import convert_sklearn
 
 
