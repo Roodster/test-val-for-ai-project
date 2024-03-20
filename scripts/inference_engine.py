@@ -19,7 +19,7 @@ N_FEATURES_BASELINE_MODEL = 315
 class InferenceEngine:
     def __init__(self, model_type='GB', onnx_model_path=None, pipeline=None):
         if model_type == 'GB':
-            if pipeline == None:
+            if pipeline is None:
                 self.model = Pipeline(steps=[('classification', GradientBoostingClassifier(n_estimators=300, min_samples_split=800, min_samples_leaf=120, max_depth=5, learning_rate=0.145))])
             else: 
                 self.model = pipeline
