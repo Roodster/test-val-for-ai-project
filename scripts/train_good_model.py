@@ -4,11 +4,10 @@ import numpy as np
 
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, fbeta_score, make_scorer
 
 from sklearn.ensemble import GradientBoostingClassifier
 from fairlearn.preprocessing import CorrelationRemover
-from sklearn.metrics import make_scorer
 
 
 from inference_engine import InferenceEngine
@@ -47,7 +46,7 @@ def custom_scoring(y_true, y_pred, fpr_threshold=0.005, fnr_treshold=0.5):
     return score
 
 
-def run_hyperparameter_optimization():
+def run_hyperparameter_optimization(save_model=False):
     
 
     params = {
@@ -69,10 +68,9 @@ def run_hyperparameter_optimization():
         
     instance_weights = pd.read_csv('./../data/instance_weights_age_only2.csv')['instance_weights']
 
-
-    score = make_scorer(custom_scoring, greater_is_better=True)
-    tuning = RandomizedSearchCV(GradientBoostingClassifier(max_depth=4, min_samples_split=2, min_samples_leaf=1, subsample=1,max_features='sqrt', random_state=42), 
-                params, scoring=score, n_jobs=1, cv=5)
+    ftwo_scorer = make_scorer(fbeta_score, beta=1.5)
+    tuning = RandomizedSearchCV(GradientBoostingClassifier(), 
+                    params, scoring=ftwo_scorer, n_jobs=1, cv=5)
         
     tuning.fit(X_train,y_train)
     print(tuning.cv_results_)
@@ -87,32 +85,8 @@ def run_hyperparameter_optimization():
     X_test_fair = metrics.preprocess_fairness_testing(X_test)
     metrics.get_metrics_summary(X_test_fair, y_test, y_pred=y_pred)
 
-
-
-    
-
-def run(protected_variables, n_iterations=1):
-        
-    for model_id in range(n_iterations):
-        # Train-test split
-        
-        df = pd.read_csv('./../data/synth_data_for_training.csv')
-        X, y = preprocess(df)
-        X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.3)      
-        X_test_fair = X_test.drop(protected_variables, axis=1)
-        cr_alpha = CorrelationRemover(sensitive_feature_ids=protected_variables, alpha=0.75)
-        
-        X_cr_alpha = cr_alpha.fit_transform(X_train)
-
-        # # Train model
-        print(f'fitting model {model_id}...')
-        model = GradientBoostingClassifier(n_estimators=350, min_samples_split=250, min_samples_leaf=25, max_depth=5, loss='log_loss', learning_rate=0.15, max_features='sqrt')
-        
-        model.fit(X_cr_alpha, y_train)
-        y_pred = model.predict(X_test_fair)
-        
-        metrics = MetricsTester(protected_variables=protected_variables)
-        metrics.get_metrics_summary(X_test, y_test, y_pred=y_pred)
+    if save_model == True:
+        model.save_onnx_model('./../model/latest_model.onnx')
 
 
 if __name__ == "__main__":
@@ -123,4 +97,4 @@ if __name__ == "__main__":
     3. save model
     """
     
-    run_hyperparameter_optimization()
+    run_hyperparameter_optimization(save_model=False)

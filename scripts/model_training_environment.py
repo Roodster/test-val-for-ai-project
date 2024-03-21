@@ -12,7 +12,7 @@ from skl2onnx import convert_sklearn
 
 
 from preprocessing import preprocess
-from testers.metrics import MetricsTester
+from metrics import MetricsTester
 from constants import protected_attributes, group_proxies
 from inference_engine import InferenceEngine
 
@@ -68,11 +68,11 @@ if __name__ == "__main__":
     # Instantiate the ModelClass with GradientBoostingClassifier
 
     params = {
-        'n_estimators': 100, 
-        'min_samples_split': 100, 
-        'min_samples_leaf': 125, 
-        'max_depth': 3, 
-        'learning_rate': 0.05}
+        'n_estimators': 350, 
+        'min_samples_split': 800, 
+        'min_samples_leaf': 200, 
+        'max_depth': 5, 
+        'learning_rate': 0.15}
     
     instance_weights = pd.read_csv('./../data/instance_weights_age_only2.csv')['instance_weights']
     
@@ -80,10 +80,10 @@ if __name__ == "__main__":
     model.fit(X_train, y_train, sample_weights=instance_weights)
     y_pred_gb = model.predict(X_test)
 
-    model.save_onnx_model(file_path="./../model/good_model_deprecated_2103.onnx")
+    model.save_onnx_model(file_path="./../model/latest_model.onnx")
 
     # Instantiate the ModelClass with ONNX model
-    engine = InferenceEngine(model_type='ONNX', onnx_model_path="./../model/good_model_deprecated_2103.onnx")
+    engine = InferenceEngine(onnx_model_path="./../model/latest_model.onnx")
     
     y_pred_new_model = engine.predict(X_test)
 

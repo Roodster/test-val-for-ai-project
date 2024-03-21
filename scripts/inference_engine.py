@@ -10,7 +10,7 @@ import onnx
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import convert_sklearn
 
-from testers.metrics import MetricsTester
+from metrics import MetricsTester
 from constants import protected_attributes, group_proxies
 
 from preprocessing import preprocess
