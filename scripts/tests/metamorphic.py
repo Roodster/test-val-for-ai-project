@@ -49,9 +49,9 @@ def plot_metamorphic_results(pre_trained_models):
     plt.show()
 
 class MetamorphicTester:
-    def __init__(self, data_path, model_path):
+    def __init__(self, X, model_path):
         self.model = model_path
-        self.df = pd.read_csv(data_path)
+        self.df = X
         self.mutation_test_results = {}
         self.column_avg = None
         self.global_average = None
