@@ -6,8 +6,6 @@ import onnxruntime as rt
 from fairlearn.metrics import MetricFrame
 from fairlearn.metrics import count, false_positive_rate, false_negative_rate, selection_rate, equalized_odds_difference
 from sklearn.metrics import recall_score, precision_score, f1_score, accuracy_score, confusion_matrix, fbeta_score, make_scorer
-
-from constants  import group_proxies                            
         
 def classification_metrics(y_true, y_pred):
     

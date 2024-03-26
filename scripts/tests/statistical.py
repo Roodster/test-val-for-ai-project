@@ -1,14 +1,10 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import sys
-sys.path.append('/../dev/')
 
 from metrics import MetricsTester
-from constants import protected_attributes, group_proxies
-from inference_engine import InferenceEngine
-
-
 
 
 def preprocess(data, target_label='checked'):
@@ -97,7 +93,8 @@ class StatisticalEvaluation:
 
 
 if __name__ == "__main__":
-    
+    import onnxruntime as rt
+
     ds_train = pd.read_csv('./../data/train.csv')
     ds_test = pd.read_csv('./../data/test.csv')    
 
@@ -105,15 +102,19 @@ if __name__ == "__main__":
     X_test, y_test = preprocess(ds_test)
     
     # Instantiate the ModelClass with ONNX model
-    engine = InferenceEngine(onnx_model_path="./../model/good_model.onnx")
-    
-    y_pred = engine.predict(X_test)
+    session = rt.InferenceSession("./../model/good_model.onnx")
+
+    y_pred = session.run(None, {'X': X_test.iloc[:, :-1].values.astype(np.float32)})[0]
 
     stats_metrics = StatisticalEvaluation()
-    metrics = MetricsTester(protected_variables=protected_attributes)
-    X_test_fair = metrics.preprocess_fairness_testing(X_test)
-    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[0], feature_map={0: 'Male', 1: 'Female'})
-    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[1], feature_map={0: 'Young', 1: 'Old'})
-    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[2], feature_map={0: 'Dutch', 1: 'Non-Dutch'})
-    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[3], feature_map={0: 'No-Children', 1: 'Children'})
+
+    """
+    TODO: Fix example
+    """
+    # metrics = MetricsTester(protected_variables=protected_attributes)
+    # X_test_fair = metrics.preprocess_fairness_testing(X_test)
+    # stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[0], feature_map={0: 'Male', 1: 'Female'})
+    # stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[1], feature_map={0: 'Young', 1: 'Old'})
+    # stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[2], feature_map={0: 'Dutch', 1: 'Non-Dutch'})
+    # stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[3], feature_map={0: 'No-Children', 1: 'Children'})
         

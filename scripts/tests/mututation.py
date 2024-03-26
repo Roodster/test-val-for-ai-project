@@ -1,12 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from model_training_environment import ModelWrapper
-from constants import protected_attributes
-import onnxruntime as rt
-
-
-
 def mutation(key):
     print(f"Initializing test: {key}...")
     def do_assignment(to_func):
@@ -136,7 +130,8 @@ class MutationTester:
     
     
 if __name__ == "__main__":
-    
+    import onnxruntime as rt
+
     params = {
         'data_shuffler': 1000,
         'data_remover': 0.25,
@@ -146,8 +141,8 @@ if __name__ == "__main__":
     }
 
 
-    df_train = pd.read_csv("./../data/train.csv")
-    df_test = pd.read_csv("./../data/test.csv")
+    df_train = pd.read_csv("./../../data/datasets/train.csv")
+    df_test = pd.read_csv("./../../data/datasets/test.csv")
     session = rt.InferenceSession("./../model/good_model.onnx")
 
     y_pred = session.run(None, {'X': df_test.iloc[:, :-1].values.astype(np.float32)})[0]
