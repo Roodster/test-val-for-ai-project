@@ -1,8 +1,9 @@
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.pipeline import Pipeline
+
+from sklearn.metrics import roc_curve, roc_auc_score
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # onnx imports
 import onnxruntime as rt
@@ -53,3 +54,21 @@ if __name__ == "__main__":
     X_test_fair = metrics.preprocess_fairness_testing(X_test)
     metrics.get_metrics_summary(X_test_fair, y_test, y_pred)
     
+
+    fpr, tpr, _ = roc_curve(y_test,  y_pred)
+
+    #create ROC curve
+    plt.figure(figsize=(8, 6))
+    sns.lineplot(x=fpr, y=tpr)
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()
+    
+    auc = roc_auc_score(y_test, y_pred)
+
+    #create ROC curve
+    plt.plot(fpr,tpr,label="AUC="+str(auc))
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.legend(loc=4)
+    plt.show()

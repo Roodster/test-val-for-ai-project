@@ -72,7 +72,15 @@ if __name__ == "__main__":
         'min_samples_split': 800, 
         'min_samples_leaf': 200, 
         'max_depth': 5, 
-        'learning_rate': 0.15}
+        'learning_rate': 0.15
+        }
+    
+    params = {
+        'n_estimators': 350, 
+        'min_samples_split': 750, 
+        'min_samples_leaf': 175, 
+        'max_depth': 6, 
+        'learning_rate': 0.1525}
     
     instance_weights = pd.read_csv('./../data/instance_weights_age_only2.csv')['instance_weights']
     

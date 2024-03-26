@@ -113,17 +113,17 @@ class MetricsTester():
 if __name__ == "__main__":
 
     
-    model_under_test = "./../../model/good_model.onnx"
+    model_under_test = "./../model/good_model.onnx"
     
-    df_test = pd.read_csv('./../../data/test.csv')
+    df_test = pd.read_csv('./../data/test.csv')
     
-    X = df_test.drop(['checked'], axis=1)
+    X_test = df_test.drop(['checked'], axis=1)
     y = df_test['checked']
     
     session = rt.InferenceSession(model_under_test)
 
     y_pred = session.run(None, {'X': df_test.iloc[:, :-1].values.astype(np.float32)})[0]    
     tester = MetricsTester(protected_variables=group_proxies)
-    X_test = tester.preprocess_fairness_testing(X)
+    # X_test = tester.preprocess_fairness_testing(X_test)
     tester.get_metrics_summary(X=X_test, y_true=y,y_pred=y_pred)
         

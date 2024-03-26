@@ -44,7 +44,7 @@ protected_attributes = [
     "relatie_partner_totaal_dagen_partner",
     "typering_hist_ind",
     "typering_ind",
-     "persoonlijke_eigenschappen_spreektaal"
+     "persoonlijke_eigenschappen_spreektaal",
 ]
 group_proxies = ['persoon_geslacht_vrouw', 
                         'persoon_leeftijd_bij_onderzoek',

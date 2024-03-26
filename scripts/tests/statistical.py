@@ -114,4 +114,6 @@ if __name__ == "__main__":
     X_test_fair = metrics.preprocess_fairness_testing(X_test)
     stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[0], feature_map={0: 'Male', 1: 'Female'})
     stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[1], feature_map={0: 'Young', 1: 'Old'})
+    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[2], feature_map={0: 'Dutch', 1: 'Non-Dutch'})
+    stats_metrics.plot_classification_by_feature(X_test_fair, y_test, y_pred, group_proxies[3], feature_map={0: 'No-Children', 1: 'Children'})
         
