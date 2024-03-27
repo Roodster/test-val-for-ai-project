@@ -44,41 +44,37 @@ def custom_scoring(y_true, y_pred, fpr_threshold=0.005):
     return recall - penalty
 
 class ModelLoader:
-    
-    def __init__(self, type='good', **params):
         
+    def load_model(type, params):
         if type == 'good':
-            self.model = GoodModel(**params)
+            return GoodModel(params)
         elif type == 'bad':
-            self.model = BadModel(**params)
+            return BadModel(params)
         elif type == 'onnx':
-            self.model = OnnxModel(**params)    
+            return OnnxModel(**params)    
             
-    def predict(self, X_test):
-        self.model.predict(X_test)
-    
-    def fit(self, X_train, y_train, sample_weights=None):
-        self.model.fit(X_train=X_train, y_train=y_train, sample_weights=sample_weights)
-        
-    def fit_hyperparameters(self, X_train, y_train, params, sample_weights=None):
-        self.model.fit_hyperparameters(X_train, y_train, params, sample_weights)
-        
-    def save_onnx_model(self, file_path=""):
-        assert file_path != "", "No file path"
-        self.model.save_onnx_model(file_path)
     
 class OnnxModel:
     def __init__(self, onnx_model_path=None):
+        assert onnx_model_path is not None, 'ERROR: no model loaded!'
         if onnx_model_path:
-            self.load_onnx_model(onnx_model_path)
+            self.session = rt.InferenceSession(onnx_model_path,  providers=["CPUExecutionProvider"])
         else:
             raise "No model loaded!"
 
-
-    def predict(self, X_test):
-        input_name = self.model.get_inputs()[0].name
-        return self.model.run(None, {input_name: X_test.values.astype(np.float32)})[0]
-
+    def predict(self, dataset):
+        """Predict the output using the wrapped regression model.
+        :param dataset: The dataset to predict on.
+        :type dataset: DatasetWrapper
+        """
+        y_pred = self.session.run(None, {'X': dataset.values.astype(np.float32)})[0]
+        return np.array(y_pred)
+    
+    def predict_proba(self, X_test):
+        y_pred_prob = self.session.run(None, {'X': X_test.values.astype(np.float32)})[1]
+        probabilities = np.array([[item[0], item[1]] for item in y_pred_prob])
+        return probabilities
+    
     def load_onnx_model(self, onnx_model_path):
         self.model = rt.InferenceSession(onnx_model_path)
         
@@ -86,10 +82,11 @@ class OnnxModel:
         print("ERROR: fit not implemented for onnx models!")        
 
 
+
+
 class GoodModel:
-    def __init__(self, params, protected_attributes):
+    def __init__(self, params):
         self.model = GradientBoostingClassifier(**params) 
-        self.protected_attributes = protected_attributes
         self.sample_weights = None
 
     def fit(self, X_train, y_train, sample_weights=None):    

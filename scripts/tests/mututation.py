@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+
+from models.modelloader import ModelLoader
 def mutation(key):
     print(f"Initializing test: {key}...")
     def do_assignment(to_func):
@@ -38,7 +40,7 @@ class MutationTester:
                         "max_depth":5,
                         "learning_rate":0.15
                     }
-                    mutant_model = ModelWrapper(model_params, protected_attributes=protected_attributes)
+                    mutant_model = ModelLoader('good', model_params)
                     mutant_model.fit(X_train_mutant, y_train_mutant)
                     
                     X_test = self.df_test.iloc[:, :-1]

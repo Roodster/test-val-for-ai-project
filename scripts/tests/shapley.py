@@ -6,21 +6,23 @@ class ShapleyTester:
     def __init__(self):
         pass
 
-    def get_tree_explainer(model, datapoint):
+    def get_tree_explainer(self, model):
         # Create object that can calculate shap values
         explainer = shap.TreeExplainer(model)
         return explainer
 
-    def get_model_explainer(model, X):
+    def get_model_explainer(self, model, X):
         # use Kernel SHAP to explain test set predictions
-        explainer = shap.KernelExplainer(model.predict_proba, X)
+        data_summary = shap.kmeans(X, 10)
+        explainer = shap.KernelExplainer(model.predict_proba, data_summary)
         return explainer
 
-    def get_shapley_values(explainer, datapoint):
+    def get_shapley_values(self, explainer, datapoint):
         k_shap_values = explainer.shap_values(datapoint)
         return k_shap_values
 
-    def plot_shapley_values(explainer, datapoint):
+    def plot_shapley_values(self, explainer, datapoint):
+        values = explainer.shap_values(datapoint)
         shap.initjs()
-        shap.force_plot(explainer.expected_value[1], explainer.shapley_values[1], datapoint)
+        return shap.force_plot(explainer.expected_value[0], values[1], datapoint)
 
