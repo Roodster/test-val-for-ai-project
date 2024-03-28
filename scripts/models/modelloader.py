@@ -6,7 +6,7 @@ import onnxruntime as rt
 import onnx
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import convert_sklearn
-from sklearn.metrics import recall_score, make_scorer
+from sklearn.metrics import recall_score, make_scorer, precision_score
 from sklearn.model_selection import RandomizedSearchCV
 
 
@@ -94,12 +94,12 @@ class GoodModel:
         
     def fit_hyperparameters(self, X_train, y_train, params):
         
-        ftwo_scorer = make_scorer(custom_scoring)
+        scorer = make_scorer(custom_scoring)
         tuning = RandomizedSearchCV(GradientBoostingClassifier(), 
-                        params, scoring=ftwo_scorer, n_jobs=4, cv=5)
+                        params, scoring=scorer, n_jobs=4, cv=5)
             
         tuning.fit(X_train,y_train)
-        self.model = GradientBoostingClassifier(tuning.best_params_)
+        self.model = GradientBoostingClassifier(**tuning.best_params_)
         
         self.fit(X_train=X_train, y_train=y_train)
 
