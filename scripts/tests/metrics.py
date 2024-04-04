@@ -10,7 +10,9 @@ from utils.constants import group_proxies
 
 
 def classification_metrics(y_true, y_pred):
-    
+    print('y_true',y_true.shape)
+    print('preed', y_pred.shape)
+    print(confusion_matrix(y_true, y_pred))
     (tn, fp, fn, tp) = confusion_matrix(y_true, y_pred).ravel()
     return (tn, fp, fn, tp)
     
@@ -42,9 +44,14 @@ class MetricsTester():
     
     
     def get_metrics(self, y_true, y_pred, sensitive_features, is_group=True):
-    
+            
+        print(y_true.shape)
+        print(y_pred.shape)
+        print(sensitive_features.shape)
+        print(is_group)
+        print('sens', sensitive_features.shape)
         mf = MetricFrame(
-            metrics=self.group_metrics if is_group else self.overall_metrics,
+            metrics=self.group_metrics if is_group else self.functional_metrics,
             y_true=y_true,
             y_pred=y_pred,
             sensitive_features=sensitive_features
@@ -58,7 +65,6 @@ class MetricsTester():
         return mf.by_group
     
     def get_metrics_overall(self, y_true, y_pred, sensitive_features):
-        
         mf = self.get_metrics(y_true, y_pred, sensitive_features=sensitive_features, is_group=False)    
         return mf.overall
     

@@ -7,10 +7,13 @@ import onnx
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import convert_sklearn
 from sklearn.metrics import recall_score, make_scorer, precision_score
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
+from sklearn.feature_selection import SelectFromModel
+from sklearn.pipeline import Pipeline
 
 
-from sklearn.ensemble import GradientBoostingClassifier
+
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 from utils.constants import protected_attributes, group_proxies
 
@@ -86,23 +89,26 @@ class OnnxModel:
 
 class GoodModel:
     def __init__(self, params):
-        self.model = GradientBoostingClassifier(**params) 
+        selector = SelectFromModel(RandomForestClassifier(class_weight='balanced')) 
+        classifier = GradientBoostingClassifier(**params)         
+        # Create a pipeline object with our selector and classifier
+        self.model = Pipeline(steps=[('feature_selection', selector), ('clf', classifier)])        
         self.sample_weights = None
 
-    def fit(self, X_train, y_train, sample_weights=None):    
-        self.model.fit(X_train, y_train, sample_weight=sample_weights)
+
+    def fit(self, X_train, y_train):    
+        self.model.fit(X_train, y_train)
         
-    def fit_hyperparameters(self, X_train, y_train, params):
+    def fit_hyperparameters(self, X_train, y_train, params, save_params=""):
         
-        scorer = make_scorer(custom_scoring)
-        tuning = RandomizedSearchCV(GradientBoostingClassifier(), 
-                        params, scoring=scorer, n_jobs=4, cv=5)
+        tuning = GridSearchCV(self.model, 
+                        params, scoring='roc_auc', n_jobs=4, cv=5, verbose=2)
             
         tuning.fit(X_train,y_train)
-        self.model = GradientBoostingClassifier(**tuning.best_params_)
         
-        self.fit(X_train=X_train, y_train=y_train)
-
+        if save_params != "":
+            print(str(tuning.best_params_))
+    
     def predict(self, X_test):
         return self.model.predict(X_test)
    
