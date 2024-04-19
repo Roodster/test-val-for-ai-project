@@ -6,6 +6,21 @@ import onnxruntime as rt
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 
 def test_metamorphic(data, feature_name : str, is_Fraud: bool ,value_from : int, value_to: int, model_path : str):
+    """
+    Test the metamorphic property of a machine learning model by modifying a feature value and comparing predictions.
+    
+    Parameters:
+    - data: DataFrame, input data
+    - feature_name: str, name of the feature to modify
+    - is_Fraud: bool, flag indicating if the data is related to fraud
+    - value_from: int, original value of the feature
+    - value_to: int, modified value of the feature
+    - model_path: str, path to the ONNX model
+    
+    Returns:
+    - diff_count: int, number of differing predictions between original and modified feature values
+    - total_predictions: int, total number of predictions made
+    """
     data_modified = data.copy() 
     is_checked = 1 if is_Fraud else 0
     test_data= data_modified.loc[data_modified['checked'] == is_checked]
@@ -28,28 +43,40 @@ def test_metamorphic(data, feature_name : str, is_Fraud: bool ,value_from : int,
         diff_count = np.sum(y_pred_onnx1_np != y_pred_onnx2_np)
         return diff_count, len(y_pred_onnx1_np)
     except InvalidArgument:
-        #print("Got error: empty test dataframe. " "Column is: ", feature_name, " combo is:", is_Fraud, value_from, value_to)
         return 0, 0
-    # assert y_pred_onnx1[0].all() == y_pred_onnx2[0].all(), f'Model predictions are different. The model has bias towards {feature_name} with value {value_from} '
-    # return True
 
 def plot_metamorphic_results(pre_trained_models):
+    """
+    Plot the results of metamorphic testing using box plots.
+    
+    Parameters:
+    - pre_trained_models: list, list of pre-trained models
+    
+    Returns:
+    - None
+    """
     data = []
     for model in pre_trained_models:
-        # Extract the percentage (it's the 2nd tuple value) and multiply it with 100
         data.append([tup[1]*100 for tup in model.column_avg])
     
     plt.boxplot(data)
-    # Add title and labels
     plt.title('Box Plot of Arrays')
     plt.xlabel('Arrays')
     plt.ylabel('Values')
-
-    # Show the plot
     plt.show()
 
 class MetamorphicTester:
     def __init__(self, X, model_path):
+        """
+        Initialize the MetamorphicTester class.
+        
+        Parameters:
+        - X: DataFrame, input data
+        - model_path: str, path to the ONNX model
+        
+        Returns:
+        - None
+        """
         self.model = model_path
         self.df = X
         self.mutation_test_results = {}
@@ -57,12 +84,15 @@ class MetamorphicTester:
         self.global_average = None
         
     def test(self):
-        # Iterate over each column in the DataFrame and generate the mutation test combinations
+        """
+        Perform mutation testing on the input data.
+        
+        Returns:
+        - None
+        """
         for column in self.df.columns:
-            # Get unique values for the current column
             unique_values = self.df[column].unique()
             if len(unique_values) > 1:
-                # We sample two random values from the unique options, and store this in the dictionary
                 rand_values = np.random.choice(unique_values, size=2, replace=False)
                 combos = []
                 for bool in [True, False]:
@@ -72,7 +102,6 @@ class MetamorphicTester:
                 
                 self.mutation_test_results[column] = combos
         
-        # Go over each combination and get how many tests failed to kill the mutation
         for column, values in self.mutation_test_results.items():
             for combo in values:
                 num_differ, length = test_metamorphic(self.df, column, combo[0], combo[1], combo[2], self.model)
@@ -80,6 +109,12 @@ class MetamorphicTester:
                 combo.append(length)
     
     def analyse_test(self):
+        """
+        Analyze the results of mutation testing.
+        
+        Returns:
+        - None
+        """
         # We can now do some basic data analysis.
         # We can compute a score on a per-column basis, getting an average across 8 tests of what percentage of mutants were failed to kill
         # We can also compute a sort of global metric. Just an average across all mutations

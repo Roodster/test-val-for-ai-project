@@ -86,10 +86,6 @@ class MetricWrapper(Wrapper):
     def consistency(self):
         return self.metric.consistency()
 
-    # @property
-    # def difference(self):
-    #     return self.metric.difference()
-
     @property
     def differential_fairness_bias_amplification(self):
         return self.metric.differential_fairness_bias_amplification()
@@ -278,17 +274,9 @@ class MetricWrapper(Wrapper):
     def precision(self):
         return self.metric.precision()
 
-    # @property
-    # def ratio(self):
-    #     return self.metric.ratio()
-
     @property
     def recall(self):
         return self.metric.recall()
-
-    # @property
-    # def rich_subgroup(self):
-    #     return self.metric.rich_subgroup()
 
     @property
     def selection_rate(self):
@@ -383,15 +371,6 @@ class GenericMetricsWrapper(Wrapper):
         tn, fp, fn, tp = confusion_matrix(self.y_true, self.y_pred).ravel()
         conf_matrix = f"TN: {tn}, FP: {fp}, FN: {fn}, TP {tp}"
         return conf_matrix
-
-
-    # @property
-    # def generalized_fpr(self):
-    #     return skm.generalized_fpr(self.y_true, self.probas_pred)
-
-    # @property
-    # def generalized_fnr(self):
-    #     return skm.generalized_fnr(self.y_true, self.probas_pred)
         
 class GroupMetricsWrapper(Wrapper):
     def __init__(self, y_true, y_pred, protected_attributes, dataset, probas_pred=None):
@@ -449,10 +428,6 @@ class GroupMetricsWrapper(Wrapper):
     def between_group_generalized_entropy_error(self):
         return skm.between_group_generalized_entropy_error(self.y_true, y_pred=self.y_pred, prot_attr=self.prot_attr)
 
-    # @property
-    # def mdss_bias_score(self):
-    #     return skm.mdss_bias_score(self.y_true, self.probas_pred, self.X)
-
 class IndividualMetricsWrapper(Wrapper):
     def __init__(self, y_true, y_pred, X, y, probas_pred=None,  alpha=2, n_neighbors=5):
         self.y_true = y_true
@@ -464,25 +439,11 @@ class IndividualMetricsWrapper(Wrapper):
         self.alpha = alpha
         self.n_neighbors = n_neighbors
 
-    # @property
-    # def generalized_entropy_index(self):
-    #     return skm.generalized_entropy_index(self.b, self.alpha)
 
     @property
     def generalized_entropy_error(self):
         return skm.generalized_entropy_error(self.y_true, self.y_pred)
 
-    # @property
-    # def theil_index(self):
-    #     return skm.theil_index(self.b)
-
-    # @property
-    # def coefficient_of_variation(self):
-    #     return skm.coefficient_of_variation(self.b)
-
-    # @property
-    # def consistency_score(self):
-    #     return skm.consistency_score(self.X, self.y, self.n_neighbors)
 
     def get_metrics(self):
         return super().get_metrics()

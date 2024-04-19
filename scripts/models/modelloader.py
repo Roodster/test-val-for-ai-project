@@ -6,17 +6,18 @@ import onnxruntime as rt
 import onnx
 from skl2onnx.common.data_types import FloatTensorType
 from skl2onnx import convert_sklearn
-from sklearn.metrics import recall_score, make_scorer, precision_score
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import recall_score
+from sklearn.model_selection import GridSearchCV
+
 
 
 from sklearn.ensemble import GradientBoostingClassifier
 
-from utils.constants import protected_attributes, group_proxies
-
 N_FEATURES_BASELINE_MODEL = 315
 
 DROPPED_FEATURE_CODE = 999
+
+PATH_BAD_MODEL_INSTANCE_WEIGHTS = '.\\..\\data\\other\\instance_weights_bad_model.csv'
 
 def drop_feature(x):
     return DROPPED_FEATURE_CODE
@@ -86,23 +87,26 @@ class OnnxModel:
 
 class GoodModel:
     def __init__(self, params):
-        self.model = GradientBoostingClassifier(**params) 
+        # selector = SelectFromModel(RandomForestClassifier(class_weight='balanced')) 
+        classifier = GradientBoostingClassifier(**params)         
+        # Create a pipeline object with our selector and classifier
+        self.model = GradientBoostingClassifier(**params)    
         self.sample_weights = None
 
-    def fit(self, X_train, y_train, sample_weights=None):    
-        self.model.fit(X_train, y_train, sample_weight=sample_weights)
+
+    def fit(self, X_train, y_train):    
+        self.model.fit(X_train, y_train)
         
-    def fit_hyperparameters(self, X_train, y_train, params):
+    def fit_hyperparameters(self, X_train, y_train, params, save_params=""):
         
-        scorer = make_scorer(custom_scoring)
-        tuning = RandomizedSearchCV(GradientBoostingClassifier(), 
-                        params, scoring=scorer, n_jobs=4, cv=5)
+        tuning = GridSearchCV(self.model, 
+                        params, scoring='roc_auc', n_jobs=4, cv=5, verbose=2)
             
         tuning.fit(X_train,y_train)
-        self.model = GradientBoostingClassifier(**tuning.best_params_)
         
-        self.fit(X_train=X_train, y_train=y_train)
-
+        if save_params != "":
+            print(str(tuning.best_params_))
+    
     def predict(self, X_test):
         return self.model.predict(X_test)
    
@@ -117,6 +121,35 @@ class GoodModel:
         print(f"Saved model to {file_path}")
 
 class BadModel:
-    pass
+    def __init__(self, params):     
+        # Create a pipeline object with our selector and classifier
+        self.model = GradientBoostingClassifier(**params)    
+        self.sample_weights = pd.read_csv(PATH_BAD_MODEL_INSTANCE_WEIGHTS).to_numpy().ravel()
+
+    def fit(self, X_train, y_train):    
+        self.model.fit(X_train, y_train, sample_weight=self.sample_weights[:X_train.shape[0]])
+        
+    def fit_hyperparameters(self, X_train, y_train, params, save_params=""):
+        
+        # Define the GridSearchCV object
+        tuning = GridSearchCV(self.model, params, scoring=recall_score, n_jobs=4)
+            
+        tuning.fit(X_train,y_train, sample_weight=self.sample_weights[:X_train.shape[0]])
+        
+        if save_params != "":
+            print(str(tuning.best_params_))
     
+    def predict(self, X_test):
+        return self.model.predict(X_test)
+
+    def save_onnx_model(self, file_path=""):
+        assert file_path != "", "No file path"
+        # Let's convert the model to ONNX
+        onnx_model = convert_sklearn(self.model, 
+                                        initial_types=[('X', FloatTensorType((None, N_FEATURES_BASELINE_MODEL)))],
+                                        target_opset=12)
+        onnx.save(onnx_model, file_path)
+        print(f"Saved model to {file_path}")
+    
+
     
